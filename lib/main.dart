@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:programas/Pantalla%20de%20inicio.dart';
 import 'package:programas/Tema1.dart';
+import 'package:programas/cyber_theme.dart';
 
 void main() {
   runApp(MyApp());
@@ -11,9 +12,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: CyberTheme.lightTheme,
+      darkTheme: CyberTheme.darkTheme,
+      themeMode: ThemeMode.system,
       initialRoute: '/',
       routes: {
         '/': (context) => PantallaInicio(),
