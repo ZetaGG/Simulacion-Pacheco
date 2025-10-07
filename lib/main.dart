@@ -10,13 +10,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
       initialRoute: '/',
       routes: {
         '/': (context) => PantallaInicio(),
-        '/Tema1':(context) => Tema1(),
+        '/Tema1': (context) => Tema1(),
       },
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+enum AFormula { threePlus8k, fivePlus8k }
+
 class CongruencialMultiplicativoWidget extends StatefulWidget {
   @override
   _CongruencialMultiplicativoWidgetState createState() =>
@@ -9,21 +11,26 @@ class CongruencialMultiplicativoWidget extends StatefulWidget {
 class _CongruencialMultiplicativoWidgetState
     extends State<CongruencialMultiplicativoWidget> {
   final _seedCtrl = TextEditingController();
-  final _aCtrl = TextEditingController();
-  final _mCtrl = TextEditingController();
+  final _gCtrl = TextEditingController();
+  final _kCtrl = TextEditingController();
   final _iterCtrl = TextEditingController();
+
+  AFormula _formula = AFormula.threePlus8k;
 
   List<Map<String, dynamic>> _results = [];
 
   void _generateNumbers() {
     final seed = int.tryParse(_seedCtrl.text);
-    final a = int.tryParse(_aCtrl.text);
-    final m = int.tryParse(_mCtrl.text);
+    final g = int.tryParse(_gCtrl.text);
+    final k = int.tryParse(_kCtrl.text);
+    final m = g != null ? (1 << g) : null; // m = 2^g
     final iterations = int.tryParse(_iterCtrl.text);
 
     if (seed == null ||
-        a == null ||
+        g == null ||
         m == null ||
+        k == null ||
+        k < 0 ||
         iterations == null ||
         iterations <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -31,6 +38,9 @@ class _CongruencialMultiplicativoWidgetState
       );
       return;
     }
+
+    final base = _formula == AFormula.threePlus8k ? 3 : 5;
+    final a = base + 8 * k;
 
     setState(() {
       _results.clear();
@@ -66,20 +76,38 @@ class _CongruencialMultiplicativoWidgetState
           ),
         ),
         const SizedBox(height: 12),
+
+        // Selección de fórmula para 'a'
+        const Text('Constante multiplicativa (a) = base + 8k'),
+        RadioListTile<AFormula>(
+          title: const Text('a = 3 + 8k'),
+          value: AFormula.threePlus8k,
+          groupValue: _formula,
+          onChanged: (val) => setState(() => _formula = val!),
+          contentPadding: EdgeInsets.zero,
+        ),
+        RadioListTile<AFormula>(
+          title: const Text('a = 5 + 8k'),
+          value: AFormula.fivePlus8k,
+          groupValue: _formula,
+          onChanged: (val) => setState(() => _formula = val!),
+          contentPadding: EdgeInsets.zero,
+        ),
         TextField(
-          controller: _aCtrl,
+          controller: _kCtrl,
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
-            labelText: 'Constante Multiplicativa (a)',
+            labelText: 'k',
             border: OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
+
         TextField(
-          controller: _mCtrl,
+          controller: _gCtrl,
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
-            labelText: 'Módulo (m)',
+            labelText: 'Exponente (g) para m = 2^g',
             border: OutlineInputBorder(),
           ),
         ),

@@ -88,7 +88,7 @@ class _MultiplicadorConstanteWidgetState
         const SizedBox(height: 12),
         TextField(
           controller: _iterCtrl,
-          keyboardType: TextInput-Type.number,
+          keyboardType: TextInputType.number,
           decoration: const InputDecoration(
             labelText: 'Número de Iteraciones',
             border: OutlineInputBorder(),

@@ -1,59 +1,65 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
 
 class BlumBlumShubWidget extends StatefulWidget {
   @override
-  _BlumBlumShubWidgetState createState() => _BlumBlumShubWidgetState();
+  State<BlumBlumShubWidget> createState() => _BlumBlumShubWidgetState();
 }
 
 class _BlumBlumShubWidgetState extends State<BlumBlumShubWidget> {
-  final _pCtrl = TextEditingController();
-  final _qCtrl = TextEditingController();
-  final _seedCtrl = TextEditingController();
-  final _iterCtrl = TextEditingController();
+  final _x0Ctrl = TextEditingController();
+  final _mCtrl = TextEditingController();
+  final _nCtrl = TextEditingController();
 
-  List<Map<String, dynamic>> _results = [];
-  String _bitSequence = '';
+  // Cada fila: { i, xi, xi2, ri }
+  List<Map<String, Object>> _rows = [];
 
-  void _generateNumbers() {
-    final p = int.tryParse(_pCtrl.text);
-    final q = int.tryParse(_qCtrl.text);
-    final seed = int.tryParse(_seedCtrl.text);
-    final iterations = int.tryParse(_iterCtrl.text);
+  void _run() {
+    final X0 = BigInt.tryParse(_x0Ctrl.text.trim());
+    final m = BigInt.tryParse(_mCtrl.text.trim());
+    final n = int.tryParse(_nCtrl.text.trim());
 
-    if (p == null ||
-        q == null ||
-        seed == null ||
-        iterations == null ||
-        iterations <= 0) {
+    if (X0 == null || m == null || n == null || n <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, ingrese valores válidos.')),
+        const SnackBar(content: Text('Ingrese X0, m y n válidos (n > 0).')),
+      );
+      return;
+    }
+    if (m <= BigInt.one) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('m debe ser > 1 para que (m - 1) sea válido.')),
       );
       return;
     }
 
-    final m = p * q;
     setState(() {
-      _results.clear();
-      _bitSequence = '';
-      BigInt x = BigInt.from(seed);
-      final M = BigInt.from(m);
+      _rows.clear();
+      BigInt xi = X0;
+      final mMinusOne = m - BigInt.one;
 
-      for (int i = 0; i < iterations; i++) {
-        final nextX = (x * x) % M;
-        final bit = nextX % BigInt.two;
+      for (int i = 1; i <= n; i++) {
+        final xi2 = xi * xi;         // Xi^2
+        final xi1 = xi2 % m;         // (Xi^2) mod m
+        // ri = xi1 / (m - 1)  -> double
+        final double ri = xi1.toDouble() / mMinusOne.toDouble();
 
-        _results.add({
-          'i': i + 1,
-          'x': x.toString(),
-          'nextX': nextX.toString(),
-          'bit': bit.toString(),
+        _rows.add({
+          'i': i,
+          'xi': xi.toString(),
+          'xi2': xi2.toString(),
+          'ri': ri,
         });
 
-        _bitSequence += bit.toString();
-        x = nextX;
+        xi = xi1; // avanzar a siguiente Xi
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _x0Ctrl.dispose();
+    _mCtrl.dispose();
+    _nCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -61,77 +67,76 @@ class _BlumBlumShubWidgetState extends State<BlumBlumShubWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(
-          controller: _pCtrl,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Primo (p)',
-            border: OutlineInputBorder(),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _x0Ctrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Semilla inicial (X0)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                controller: _mCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'm',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 140,
+              child: TextField(
+                controller: _nCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'n',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
-        TextField(
-          controller: _qCtrl,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Primo (q)',
-            border: OutlineInputBorder(),
+        Align(
+          alignment: Alignment.centerRight,
+          child: ElevatedButton(
+            onPressed: _run,
+            child: const Text('Ejecutar'),
           ),
         ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _seedCtrl,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Semilla (X₀)',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _iterCtrl,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Número de Bits a Generar',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        ElevatedButton(
-          onPressed: _generateNumbers,
-          child: const Text('Generar'),
-        ),
-        const SizedBox(height: 20),
-        if (_results.isNotEmpty) ...[
-          Text(
-            'Secuencia de Bits: $_bitSequence',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
+        const SizedBox(height: 16),
+        if (_rows.isNotEmpty)
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
               columns: const [
                 DataColumn(label: Text('i')),
-                DataColumn(label: Text('Xᵢ')),
-                DataColumn(label: Text('Xᵢ₊₁')),
-                DataColumn(label: Text('Bit')),
+                DataColumn(label: Text('Xi')),
+                DataColumn(label: Text('Xi^2')),
+                DataColumn(label: Text('ri')),
               ],
-              rows: _results
+              rows: _rows
                   .map(
-                    (row) => DataRow(
+                    (r) => DataRow(
                       cells: [
-                        DataCell(Text(row['i'].toString())),
-                        DataCell(Text(row['x'])),
-                        DataCell(Text(row['nextX'])),
-                        DataCell(Text(row['bit'])),
+                        DataCell(Text(r['i'].toString())),
+                        DataCell(SelectableText(r['xi'] as String)),
+                        DataCell(SelectableText(r['xi2'] as String)),
+                        DataCell(Text((r['ri'] as double).toStringAsFixed(4))),
                       ],
                     ),
                   )
                   .toList(),
             ),
           ),
-        ]
       ],
     );
   }
