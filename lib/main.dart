@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
-import 'Pantalla de inicio.dart';
+import 'package:programas/Pantalla%20de%20inicio.dart';
+import 'package:programas/Tema1.dart';
+
+void main() {
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -8,7 +13,11 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: PantallaInicio(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => PantallaInicio(),
+        '/Tema1':(context) => Tema1(),
+      },
     );
   }
 }
