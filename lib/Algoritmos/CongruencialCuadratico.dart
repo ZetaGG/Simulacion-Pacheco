@@ -12,7 +12,7 @@ class _CongruencialCuadraticoWidgetState
   final _aCtrl = TextEditingController();
   final _bCtrl = TextEditingController();
   final _cCtrl = TextEditingController();
-  final _mCtrl = TextEditingController();
+  final _gCtrl = TextEditingController();
   final _iterCtrl = TextEditingController();
 
   List<Map<String, dynamic>> _results = [];
@@ -22,8 +22,9 @@ class _CongruencialCuadraticoWidgetState
     final a = int.tryParse(_aCtrl.text);
     final b = int.tryParse(_bCtrl.text);
     final c = int.tryParse(_cCtrl.text);
-    final m = int.tryParse(_mCtrl.text);
+    final g = int.tryParse(_gCtrl.text);
     final iterations = int.tryParse(_iterCtrl.text);
+    final m = g != null ? (1 << g) : null; // m = 2^g
 
     if (seed == null ||
         a == null ||
@@ -34,6 +35,16 @@ class _CongruencialCuadraticoWidgetState
         iterations <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor, ingrese valores válidos.')),
+      );
+      return;
+    }
+
+    // Validación: (b - 1) mod 4 debe ser 1
+    if (((b - 1) % 4) != 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('El valor de b no cumple: (b - 1) mod 4 debe ser igual a 1.'),
+        ),
       );
       return;
     }
@@ -100,10 +111,10 @@ class _CongruencialCuadraticoWidgetState
         ),
         const SizedBox(height: 12),
         TextField(
-          controller: _mCtrl,
+          controller: _gCtrl,
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
-            labelText: 'Módulo (m)',
+            labelText: 'Exponente (g) para m = 2^g',
             border: OutlineInputBorder(),
           ),
         ),

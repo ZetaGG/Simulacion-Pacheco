@@ -12,56 +12,78 @@ class _ProductosMediosWidgetState extends State<ProductosMediosWidget> {
 
   List<Map<String, dynamic>> _results = [];
 
-  void _generateNumbers() {
-    final seed0 = int.tryParse(_seed0Ctrl.text);
-    final seed1 = int.tryParse(_seed1Ctrl.text);
-    final iterations = int.tryParse(_iterCtrl.text);
+  bool _isDigitsOnly(String s) => RegExp(r'^\d+$').hasMatch(s);
 
-    if (seed0 == null ||
-        seed1 == null ||
+  void _generateNumbers() {
+    final seed0Text = _seed0Ctrl.text.trim();
+    final seed1Text = _seed1Ctrl.text.trim();
+    final iterText = _iterCtrl.text.trim();
+
+    final iterations = int.tryParse(iterText);
+
+    if (seed0Text.isEmpty ||
+        seed1Text.isEmpty ||
+        !_isDigitsOnly(seed0Text) ||
+        !_isDigitsOnly(seed1Text) ||
         iterations == null ||
         iterations <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, ingrese valores válidos.')),
+        const SnackBar(content: Text('Por favor, ingrese valores válidos (solo dígitos y iteraciones > 0).')),
       );
       return;
     }
 
-    if (_seed0Ctrl.text.length != _seed1Ctrl.text.length) {
+    if (seed0Text.length != seed1Text.length) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Las semillas deben tener la misma longitud.')),
+        const SnackBar(content: Text('Las semillas deben tener la misma longitud.')),
       );
       return;
     }
 
     setState(() {
       _results.clear();
-      int x0 = seed0;
-      int x1 = seed1;
-      final d = _seed0Ctrl.text.length;
+      int x0 = int.parse(seed0Text);
+      int x1 = int.parse(seed1Text);
+      final d = seed0Text.length;
 
       for (int i = 0; i < iterations; i++) {
+        // Producto de las dos semillas actuales (método de productos medios)
         final y = x0 * x1;
+
+        // Representación con exactamente 2d dígitos (rellena con ceros a la izquierda si hace falta)
         final yStr = y.toString().padLeft(d * 2, '0');
+
+        // Punto de inicio para extraer los d dígitos centrales
         final startIndex = (yStr.length - d) ~/ 2;
+
+        // Extrae los d dígitos centrales -> siguiente semilla
         final nextXStr = yStr.substring(startIndex, startIndex + d);
         final nextX = int.parse(nextXStr);
-        final r = double.parse('0.$nextXStr');
+
+        // Número pseudoaleatorio rᵢ en [0, 1) usando los d dígitos extraídos
+        final rStr = '0.$nextXStr';
 
         _results.add({
           'i': i + 1,
-          'x0': x0,
-          'x1': x1,
-          'y': y,
+          'x0Str': x0.toString().padLeft(d, '0'),
+          'x1Str': x1.toString().padLeft(d, '0'),
+          'yStr': yStr,
           'nextX': nextXStr,
-          'r': r.toStringAsFixed(d),
+          'r': double.parse(rStr).toStringAsFixed(d),
         });
 
         x0 = x1;
         x1 = nextX;
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _seed0Ctrl.dispose();
+    _seed1Ctrl.dispose();
+    _iterCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -118,9 +140,9 @@ class _ProductosMediosWidgetState extends State<ProductosMediosWidget> {
                     (row) => DataRow(
                       cells: [
                         DataCell(Text(row['i'].toString())),
-                        DataCell(Text(row['x0'].toString())),
-                        DataCell(Text(row['x1'].toString())),
-                        DataCell(Text(row['y'].toString())),
+                        DataCell(Text(row['x0Str'])),
+                        DataCell(Text(row['x1Str'])),
+                        DataCell(Text(row['yStr'])),
                         DataCell(Text(row['nextX'])),
                         DataCell(Text(row['r'])),
                       ],
