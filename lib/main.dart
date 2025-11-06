@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:programas/Pantalla%20de%20inicio.dart';
+import 'package:programas/PruebasEstadisticas.dart';
 import 'package:programas/Tema1.dart';
 import 'package:programas/cyber_theme.dart';
 
@@ -19,6 +21,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => PantallaInicio(),
         '/Tema1': (context) => Tema1(),
+        '/PruebasEstadisticas': (context) => PruebasEstadisticas(),
       },
     );
   }
