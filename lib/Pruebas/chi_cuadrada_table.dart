@@ -156,24 +156,53 @@ class ChiCuadradaTable {
   };
 
   static double lookup(double p, int df) {
-    if (_table.containsKey(df) && _table[df].containsKey(p)) {
-      return _table[df][p];
+    // First, try to find an exact match for p with a tolerance
+    double _findValue(Map<double, double> pMap) {
+      if (pMap == null) return null;
+      double bestKey;
+      double minDiff = double.infinity;
+
+      for (var key in pMap.keys) {
+        var diff = (key - p).abs();
+        if (diff < minDiff) {
+          minDiff = diff;
+          bestKey = key;
+        }
+      }
+
+      // Use a small tolerance for floating point comparisons
+      if (minDiff < 0.0001) {
+        return pMap[bestKey];
+      }
+      return null;
     }
-    // Simple interpolation for df values not in the table
+
+    // Check for an exact DF match
+    if (_table.containsKey(df)) {
+      var value = _findValue(_table[df]);
+      if (value != null) return value;
+    }
+
+    // Wilson-Hilferty approximation for df > 150
     if (df > 150) {
-      // For large df, chi-squared distribution approaches normal
-      // This is a simplification and may not be accurate for all cases
       return df * pow(1 - 2 / (9 * df) + _getZ(p) * sqrt(2 / (9 * df)), 3);
     }
 
-    // If df is not in the table, try to find the closest lower df and use its value.
-    // This is a practical fallback but may not be statistically perfect.
-    final closestDf = _table.keys.lastWhere((key) => key < df, orElse: () => null);
-    if (closestDf != null && _table[closestDf].containsKey(p)) {
-      return _table[closestDf][p];
+    // Linear interpolation for missing df values
+    final lowerDf = _table.keys.lastWhere((key) => key < df, orElse: () => null);
+    final upperDf = _table.keys.firstWhere((key) => key > df, orElse: () => null);
+
+    if (lowerDf != null && upperDf != null) {
+      final lowerVal = _findValue(_table[lowerDf]);
+      final upperVal = _findValue(_table[upperDf]);
+
+      if (lowerVal != null && upperVal != null) {
+        // Perform linear interpolation
+        return lowerVal + (df - lowerDf) * (upperVal - lowerVal) / (upperDf - lowerDf);
+      }
     }
 
-    return null;
+    return null; // Return null if interpolation is not possible
   }
 
   static double _getZ(double alpha) {
