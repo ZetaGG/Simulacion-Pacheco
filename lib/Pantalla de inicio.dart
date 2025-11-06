@@ -41,23 +41,7 @@ class PantallaInicio extends StatelessWidget {
             ListTile(
               title: Text('Tema 3'),
               onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('Aviso'),
-                      content: Text('Contenido no disponible'),
-                      actions: <Widget>[
-                        TextButton(
-                          child: Text('Aceptar'),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                );
+                Navigator.pushNamed(context, '/PruebasEstadisticas');
               },
             ),
           ],
