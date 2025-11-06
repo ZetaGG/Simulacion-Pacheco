@@ -14,6 +14,14 @@ class PruebaMedias {
     double li = 0.5 - z * (1 / sqrt(12 * n));
     double ls = 0.5 + z * (1 / sqrt(12 * n));
 
+    List<Map<String, dynamic>> table = [];
+    for (int i = 0; i < n; i++) {
+      table.add({
+        'i': i + 1,
+        'r_i': sublist[i],
+      });
+    }
+
     return {
       'H0': 'μ = 0.5',
       'H1': 'μ ≠ 0.5',
@@ -21,6 +29,8 @@ class PruebaMedias {
       'Z': z,
       'Li': li,
       'Ls': ls,
+      'sum': sum,
+      'table': table,
       'conclusion': u >= li && u <= ls
           ? 'No se rechaza H0, ya que U está dentro del intervalo [$li, $ls]'
           : 'Se rechaza H0, ya que U no está dentro del intervalo [$li, $ls]',

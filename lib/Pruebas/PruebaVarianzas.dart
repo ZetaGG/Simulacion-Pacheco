@@ -10,7 +10,21 @@ class PruebaVarianzas {
     List<double> sublist = numeros.sublist(0, n);
     double sum = sublist.reduce((a, b) => a + b);
     double mean = sum / n;
-    double varianceSum = sublist.map((x) => pow(x - mean, 2)).reduce((a, b) => a + b);
+
+    List<Map<String, dynamic>> table = [];
+    double varianceSum = 0;
+    for (int i = 0; i < n; i++) {
+      double diff = sublist[i] - mean;
+      double diff2 = pow(diff, 2);
+      varianceSum += diff2;
+      table.add({
+        'i': i + 1,
+        'r_i': sublist[i],
+        'r_i - X': diff,
+        '(r_i - X)^2': diff2,
+      });
+    }
+
     double s2 = varianceSum / (n - 1);
     double alpha = 1 - (confianza / 100);
 
@@ -34,6 +48,7 @@ class PruebaVarianzas {
       'chi_1_alpha_2': chi_1_alpha_2,
       'Li': li,
       'Ls': ls,
+      'table': table,
       'conclusion': s2 >= li && s2 <= ls
           ? 'No se rechaza H0, ya que S^2 está dentro del intervalo [$li, $ls]'
           : 'Se rechaza H0, ya que S^2 no está dentro del intervalo [$li, $ls]',

@@ -8,12 +8,13 @@ class PruebaCorridas {
 
     List<double> sublist = numeros.sublist(0, n);
     List<int> sequence = [];
+    List<Map<String, dynamic>> table = [];
+
+    table.add({'i': 1, 'r_i': sublist[0], 'secuencia': '-'});
     for (int i = 0; i < n - 1; i++) {
-      if (sublist[i+1] > sublist[i]) {
-        sequence.add(1);
-      } else {
-        sequence.add(0);
-      }
+      int seq_val = sublist[i+1] > sublist[i] ? 1 : 0;
+      sequence.add(seq_val);
+      table.add({'i': i + 2, 'r_i': sublist[i+1], 'secuencia': seq_val});
     }
 
     int co = 1;
@@ -34,13 +35,13 @@ class PruebaCorridas {
     return {
       'H0': 'Los números ri son independientes',
       'H1': 'Los números ri no son independientes',
-      'sequence': sequence,
       'Co': co,
       'mu_co': mu_co,
       'sigma2_co': sigma2_co,
       'sigma_co': sigma_co,
       'z0': z0,
       'z_alpha_2': z_alpha_2,
+      'table': table,
       'conclusion': z0 < z_alpha_2
           ? 'No se rechaza H0, ya que Z₀ < Zα/2'
           : 'Se rechaza H0, ya que Z₀ ≥ Zα/2',
