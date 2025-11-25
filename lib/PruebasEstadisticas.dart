@@ -13,14 +13,15 @@ class PruebasEstadisticas extends StatefulWidget {
 }
 
 class _PruebasEstadisticasState extends State<PruebasEstadisticas> {
-  String _selectedTest;
+  String? _selectedTest;
   final TextEditingController _nController = TextEditingController();
   final TextEditingController _confidenceController = TextEditingController();
-  Map<String, dynamic> _results;
+  final TextEditingController _decimalsController = TextEditingController(text: '4');
+  Map<String, dynamic>? _results;
 
   // Generate random numbers for testing
   final Random _random = Random();
-  List<double> _randomNumbers;
+  late List<double> _randomNumbers;
 
   @override
   void initState() {
@@ -34,26 +35,45 @@ class _PruebasEstadisticasState extends State<PruebasEstadisticas> {
     }
     int n = int.parse(_nController.text);
     double confidence = double.parse(_confidenceController.text);
-    Map<String, dynamic> res;
+    Map<String, dynamic>? res;
+
+    // Determine decimals (default 4) and prepare the exact sequence used for the test so we can show it later
+    int decimals = 4;
+    try {
+      decimals = int.parse(_decimalsController.text);
+      if (decimals < 0) decimals = 0;
+    } catch (_) {
+      decimals = 4;
+    }
+
+    // Round the sequence to the requested number of decimals
+    final sequence = _randomNumbers
+        .sublist(0, n)
+        .map((d) => double.parse(d.toStringAsFixed(decimals)))
+        .toList();
 
     switch (_selectedTest) {
       case 'Medias':
-        res = PruebaMedias.calcular(_randomNumbers, n, confidence);
+        res = PruebaMedias.calcular(sequence, n, confidence);
         break;
       case 'Varianzas':
-        res = PruebaVarianzas.calcular(_randomNumbers, n, confidence);
+        res = PruebaVarianzas.calcular(sequence, n, confidence);
         break;
       case 'Chi-Cuadrada':
-        res = PruebaChiCuadrada.calcular(_randomNumbers, n, confidence);
+        res = PruebaChiCuadrada.calcular(sequence, n, confidence);
         break;
       case 'Corridas':
-        res = PruebaCorridas.calcular(_randomNumbers, n, confidence);
+        res = PruebaCorridas.calcular(sequence, n, confidence);
         break;
       case 'Poker':
-        res = PruebaPoker.calcular(_randomNumbers, n, confidence);
+        res = PruebaPoker.calcular(sequence, n, confidence, digits: decimals);
         break;
     }
 
+    if (res == null) return;
+    // Attach the sequence used and decimals so ResultDisplay can render formatted values
+    res['sequence'] = sequence;
+    res['decimals'] = decimals;
     setState(() {
       _results = res;
     });
@@ -72,7 +92,7 @@ class _PruebasEstadisticasState extends State<PruebasEstadisticas> {
             DropdownButton<String>(
               hint: Text('Seleccione una prueba'),
               value: _selectedTest,
-              onChanged: (String newValue) {
+              onChanged: (String? newValue) {
                 setState(() {
                   _selectedTest = newValue;
                 });
@@ -88,6 +108,12 @@ class _PruebasEstadisticasState extends State<PruebasEstadisticas> {
             TextField(
               controller: _nController,
               decoration: InputDecoration(labelText: 'Cantidad de números (n)'),
+              keyboardType: TextInputType.number,
+            ),
+            SizedBox(height: 8),
+            TextField(
+              controller: _decimalsController,
+              decoration: InputDecoration(labelText: 'Decimales en números aleatorios (ej. 4)'),
               keyboardType: TextInputType.number,
             ),
             TextField(

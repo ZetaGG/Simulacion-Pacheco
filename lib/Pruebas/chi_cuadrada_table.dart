@@ -1,7 +1,8 @@
 import 'dart:math';
 
 class ChiCuadradaTable {
-  static const Map<int, Map<double, double>> _table = {
+  // Use final instead of const because double as a Map key is not allowed in const maps
+  static final Map<int, Map<double, double>> _table = {
     // DF: {P: value}
     1: {0.995: 0.0000393, 0.975: 0.000982, 0.05: 3.841, 0.025: 5.024, 0.01: 6.635},
     2: {0.995: 0.0100, 0.975: 0.0506, 0.05: 5.991, 0.025: 7.378, 0.01: 9.210},
@@ -155,13 +156,14 @@ class ChiCuadradaTable {
     150: {0.995: 109.142, 0.975: 117.985, 0.05: 179.581, 0.025: 185.800, 0.01: 193.208},
   };
 
-  static double lookup(double p, int df) {
+  static double? lookup(double p, int df) {
     // First, try to find an exact match for p with a tolerance
-    double _findValue(Map<double, double> pMap) {
+    double? _findValue(Map<double, double>? pMap) {
       if (pMap == null) return null;
-      double bestKey;
-      double minDiff = double.infinity;
 
+      // Try exact (within tolerance) match first
+      double? bestKey;
+      double minDiff = double.infinity;
       for (var key in pMap.keys) {
         var diff = (key - p).abs();
         if (diff < minDiff) {
@@ -169,11 +171,27 @@ class ChiCuadradaTable {
           bestKey = key;
         }
       }
-
-      // Use a small tolerance for floating point comparisons
-      if (minDiff < 0.0001) {
+      if (bestKey != null && minDiff < 0.0001) {
         return pMap[bestKey];
       }
+
+      // Otherwise, attempt linear interpolation between the two nearest p keys
+      final ps = pMap.keys.toList()..sort();
+      double? lowerP;
+      double? upperP;
+      for (var k in ps) {
+        if (k < p) lowerP = k;
+        if (k > p && upperP == null) upperP = k;
+      }
+
+      if (lowerP != null && upperP != null) {
+        final lowerVal = pMap[lowerP]!;
+        final upperVal = pMap[upperP]!;
+        // linear interpolate value for given p
+        return lowerVal + (p - lowerP) * (upperVal - lowerVal) / (upperP - lowerP);
+      }
+
+      // If we can't interpolate (p out of range), return null
       return null;
     }
 
@@ -185,19 +203,24 @@ class ChiCuadradaTable {
 
     // Wilson-Hilferty approximation for df > 150
     if (df > 150) {
-      return df * pow(1 - 2 / (9 * df) + _getZ(p) * sqrt(2 / (9 * df)), 3);
+      return df * pow(1 - 2 / (9 * df) + _getZ(p) * sqrt(2 / (9 * df)), 3).toDouble();
     }
 
     // Linear interpolation for missing df values
-    final lowerDf = _table.keys.lastWhere((key) => key < df, orElse: () => null);
-    final upperDf = _table.keys.firstWhere((key) => key > df, orElse: () => null);
+    final dfs = _table.keys.toList()..sort();
+    int? lowerDf;
+    int? upperDf;
+    for (var k in dfs) {
+      if (k < df) lowerDf = k;
+      if (k > df && upperDf == null) upperDf = k;
+    }
 
     if (lowerDf != null && upperDf != null) {
       final lowerVal = _findValue(_table[lowerDf]);
       final upperVal = _findValue(_table[upperDf]);
 
       if (lowerVal != null && upperVal != null) {
-        // Perform linear interpolation
+        // Perform linear interpolation on degrees of freedom
         return lowerVal + (df - lowerDf) * (upperVal - lowerVal) / (upperDf - lowerDf);
       }
     }

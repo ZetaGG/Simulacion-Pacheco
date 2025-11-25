@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import 'package:programas/Pantalla%20de%20inicio.dart';
 import 'package:programas/PruebasEstadisticas.dart';
 import 'package:programas/Tema1.dart';

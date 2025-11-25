@@ -15,7 +15,7 @@ class PruebaVarianzas {
     double varianceSum = 0;
     for (int i = 0; i < n; i++) {
       double diff = sublist[i] - mean;
-      double diff2 = pow(diff, 2);
+      double diff2 = pow(diff, 2).toDouble();
       varianceSum += diff2;
       table.add({
         'i': i + 1,
@@ -28,8 +28,8 @@ class PruebaVarianzas {
     double s2 = varianceSum / (n - 1);
     double alpha = 1 - (confianza / 100);
 
-    double chi_alpha_2 = ChiCuadradaTable.lookup(alpha / 2, n - 1);
-    double chi_1_alpha_2 = ChiCuadradaTable.lookup(1 - alpha / 2, n - 1);
+    double? chi_alpha_2 = ChiCuadradaTable.lookup(alpha / 2, n - 1);
+    double? chi_1_alpha_2 = ChiCuadradaTable.lookup(1 - alpha / 2, n - 1);
 
     if (chi_alpha_2 == null || chi_1_alpha_2 == null) {
       return {'error': 'No se encontraron los valores críticos de Chi-Cuadrada para los grados de libertad dados.'};
