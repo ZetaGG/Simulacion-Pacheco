@@ -167,9 +167,9 @@ class _MonteCarloViewState extends State<MonteCarloView> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Text('Utilidad Promedio', style: Theme.of(context).textTheme.headline6),
+            Text('Utilidad Promedio', style: Theme.of(context).textTheme.titleLarge),
             SizedBox(height: 10),
-            Text('\$${averageProfit.toStringAsFixed(2)}', style: Theme.of(context).textTheme.headline4),
+            Text('\$${averageProfit.toStringAsFixed(2)}', style: Theme.of(context).textTheme.headlineMedium),
           ],
         ),
       ),
