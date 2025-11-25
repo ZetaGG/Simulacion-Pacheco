@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:pluto_grid/pluto_grid.dart';
 import 'package:provider/provider.dart';
-import 'monte_carlo_logic.dart';
+import 'monte_carlo_service.dart';
 
 class MonteCarloScreen extends StatelessWidget {
   @override
@@ -28,32 +28,63 @@ class _MonteCarloViewState extends State<MonteCarloView> {
   final TextEditingController _demandController = TextEditingController();
   final TextEditingController _probController = TextEditingController();
 
+  // Controllers for Multi-Q section
+  late final TextEditingController _multiQController;
+  late final TextEditingController _multiQDaysController;
+  late final TextEditingController _multiQRepetitionsController;
+
+  // Controllers for general inputs
   late final TextEditingController _quantityController;
   late final TextEditingController _unitCostController;
   late final TextEditingController _sellingPriceController;
   late final TextEditingController _salvagePriceController;
-  late final TextEditingController _simulationsController;
+  late final TextEditingController _daysToSimulateController;
 
   @override
   void initState() {
     super.initState();
     final provider = Provider.of<MonteCarloProvider>(context, listen: false);
+
+    // Initialize general input controllers
     _quantityController = TextEditingController(text: provider.quantity.toString());
     _unitCostController = TextEditingController(text: provider.unitCost.toString());
     _sellingPriceController = TextEditingController(text: provider.sellingPrice.toString());
     _salvagePriceController = TextEditingController(text: provider.salvagePrice.toString());
-    _simulationsController = TextEditingController(text: provider.simulations.toString());
+    _daysToSimulateController = TextEditingController(text: provider.daysToSimulate.toString());
+
+    // Initialize Multi-Q controllers
+    _multiQController = TextEditingController();
+    _multiQDaysController = TextEditingController(text: provider.multiQDays.toString());
+    _multiQRepetitionsController = TextEditingController(text: provider.multiQRepetitions.toString());
+
+
+    // Listener for showing SnackBar on error
+    provider.addListener(() {
+      if (provider.simulationError != null && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(provider.simulationError!),
+              backgroundColor: Colors.red,
+            ),
+          );
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _demandController.dispose();
     _probController.dispose();
+    _multiQController.dispose();
+    _multiQDaysController.dispose();
+    _multiQRepetitionsController.dispose();
     _quantityController.dispose();
     _unitCostController.dispose();
     _sellingPriceController.dispose();
     _salvagePriceController.dispose();
-    _simulationsController.dispose();
+    _daysToSimulateController.dispose();
     super.dispose();
   }
 
@@ -72,7 +103,7 @@ class _MonteCarloViewState extends State<MonteCarloView> {
           SizedBox(height: 20),
           ElevatedButton(
             onPressed: provider.isButtonEnabled ? () => provider.runSimulation() : null,
-            child: Text('Simular'),
+            child: Text('Simular Días'),
           ),
           if (!provider.isButtonEnabled)
             Padding(
@@ -90,7 +121,10 @@ class _MonteCarloViewState extends State<MonteCarloView> {
             _buildResultsTable(provider.results),
             SizedBox(height: 20),
             _buildChart(provider.results, provider.averageProfit),
-          ]
+          ],
+
+          Divider(height: 40, thickness: 2),
+          _buildMultiQSection(provider),
         ],
       ),
     );
@@ -105,7 +139,7 @@ class _MonteCarloViewState extends State<MonteCarloView> {
         _buildTextField("Costo Unitario", _unitCostController, provider.setUnitCost),
         _buildTextField("Precio Venta", _sellingPriceController, provider.setSellingPrice),
         _buildTextField("Precio Reventa", _salvagePriceController, provider.setSalvagePrice),
-        _buildTextField("N (Simulaciones)", _simulationsController, provider.setSimulations),
+        _buildTextField("Número de Días a Simular", _daysToSimulateController, provider.setDaysToSimulate),
       ],
     );
   }
@@ -144,6 +178,7 @@ class _MonteCarloViewState extends State<MonteCarloView> {
         SizedBox(height: 10),
         ListView.builder(
           shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
           itemCount: provider.probabilities.length,
           itemBuilder: (context, index) {
             final entry = provider.probabilities[index];
@@ -179,12 +214,12 @@ class _MonteCarloViewState extends State<MonteCarloView> {
   Widget _buildResultsTable(List<SimulationResult> results) {
     final List<PlutoColumn> columns = [
       PlutoColumn(title: 'Día', field: 'day', type: PlutoColumnType.number()),
-      PlutoColumn(title: 'Aleatorio', field: 'random', type: PlutoColumnType.number()),
+      PlutoColumn(title: 'Aleatorio', field: 'random', type: PlutoColumnType.number(format: '#.####')),
       PlutoColumn(title: 'Demanda', field: 'demand', type: PlutoColumnType.number()),
       PlutoColumn(title: 'Q Comprada', field: 'quantity', type: PlutoColumnType.number()),
-      PlutoColumn(title: 'Ing. Venta', field: 'sales', type: PlutoColumnType.number()),
-      PlutoColumn(title: 'Ing. Reventa', field: 'salvage', type: PlutoColumnType.number()),
-      PlutoColumn(title: 'Utilidad', field: 'profit', type: PlutoColumnType.number()),
+      PlutoColumn(title: 'Ing. Venta', field: 'sales', type: PlutoColumnType.number(format: '#,###.##')),
+      PlutoColumn(title: 'Ing. Reventa', field: 'salvage', type: PlutoColumnType.number(format: '#,###.##')),
+      PlutoColumn(title: 'Utilidad', field: 'profit', type: PlutoColumnType.number(format: '#,###.##')),
     ];
 
     final List<PlutoRow> rows = results.map((res) {
@@ -204,11 +239,6 @@ class _MonteCarloViewState extends State<MonteCarloView> {
       child: PlutoGrid(
         columns: columns,
         rows: rows,
-        configuration: PlutoGridConfiguration(
-          style: PlutoGridStyleConfig(
-            gridBorderColor: Colors.grey,
-          ),
-        ),
       ),
     );
   }
@@ -242,6 +272,68 @@ class _MonteCarloViewState extends State<MonteCarloView> {
               belowBarData: BarAreaData(show: false),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMultiQSection(MonteCarloProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Análisis de Multisimulación',
+          style: Theme.of(context).textTheme.headlineSmall,
+          textAlign: TextAlign.center,
+        ),
+        SizedBox(height: 16),
+        _buildTextField('Valores de Q (ej: 50, 55, 60)', _multiQController, provider.setMultiQInput),
+        SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(child: _buildTextField('Días por Simulación', _multiQDaysController, provider.setMultiQDays)),
+            SizedBox(width: 10),
+            Expanded(child: _buildTextField('No. de Repeticiones', _multiQRepetitionsController, provider.setMultiQRepetitions)),
+          ],
+        ),
+        SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: provider.isButtonEnabled && !provider.isMultiQLoading
+              ? () => provider.runMultiQSimulation()
+              : null,
+          child: provider.isMultiQLoading
+              ? CircularProgressIndicator(color: Colors.white)
+              : Text('Comparar Escenarios'),
+        ),
+        SizedBox(height: 16),
+        if (provider.multiQResults.isNotEmpty)
+          _buildMultiQResultsTable(provider.multiQResults),
+      ],
+    );
+  }
+
+  Widget _buildMultiQResultsTable(List<MultiQResult> results) {
+    final List<PlutoColumn> columns = [
+      PlutoColumn(title: 'Cantidad (Q)', field: 'q', type: PlutoColumnType.number()),
+      PlutoColumn(title: 'Utilidad Promedio Esperada', field: 'profit', type: PlutoColumnType.number(format: '#,###.##')),
+    ];
+
+    final List<PlutoRow> rows = results.map((res) {
+      return PlutoRow(cells: {
+        'q': PlutoCell(value: res.quantity),
+        'profit': PlutoCell(value: res.averageProfit),
+      });
+    }).toList();
+
+    return SizedBox(
+      height: 200,
+      child: PlutoGrid(
+        columns: columns,
+        rows: rows,
+        configuration: PlutoGridConfiguration(
+          style: PlutoGridStyleConfig(
+            gridBorderColor: Colors.grey,
+          ),
         ),
       ),
     );
