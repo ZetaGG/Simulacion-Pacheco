@@ -27,6 +27,7 @@ class MonteCarloView extends StatefulWidget {
 class _MonteCarloViewState extends State<MonteCarloView> {
   final TextEditingController _demandController = TextEditingController();
   final TextEditingController _probController = TextEditingController();
+  final TextEditingController _multiQController = TextEditingController();
 
   late final TextEditingController _quantityController;
   late final TextEditingController _unitCostController;
@@ -43,12 +44,27 @@ class _MonteCarloViewState extends State<MonteCarloView> {
     _sellingPriceController = TextEditingController(text: provider.sellingPrice.toString());
     _salvagePriceController = TextEditingController(text: provider.salvagePrice.toString());
     _simulationsController = TextEditingController(text: provider.simulations.toString());
+
+    // Listener para mostrar SnackBar en caso de error
+    provider.addListener(() {
+      if (provider.simulationError != null && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(provider.simulationError!),
+              backgroundColor: Colors.red,
+            ),
+          );
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _demandController.dispose();
     _probController.dispose();
+    _multiQController.dispose();
     _quantityController.dispose();
     _unitCostController.dispose();
     _sellingPriceController.dispose();
@@ -90,7 +106,11 @@ class _MonteCarloViewState extends State<MonteCarloView> {
             _buildResultsTable(provider.results),
             SizedBox(height: 20),
             _buildChart(provider.results, provider.averageProfit),
-          ]
+          ],
+
+          // Nueva sección de Multisimulación
+          Divider(height: 40, thickness: 2),
+          _buildMultiQSection(provider),
         ],
       ),
     );
@@ -144,6 +164,7 @@ class _MonteCarloViewState extends State<MonteCarloView> {
         SizedBox(height: 10),
         ListView.builder(
           shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
           itemCount: provider.probabilities.length,
           itemBuilder: (context, index) {
             final entry = provider.probabilities[index];
@@ -179,12 +200,12 @@ class _MonteCarloViewState extends State<MonteCarloView> {
   Widget _buildResultsTable(List<SimulationResult> results) {
     final List<PlutoColumn> columns = [
       PlutoColumn(title: 'Día', field: 'day', type: PlutoColumnType.number()),
-      PlutoColumn(title: 'Aleatorio', field: 'random', type: PlutoColumnType.number()),
+      PlutoColumn(title: 'Aleatorio', field: 'random', type: PlutoColumnType.number(format: '#.####')),
       PlutoColumn(title: 'Demanda', field: 'demand', type: PlutoColumnType.number()),
       PlutoColumn(title: 'Q Comprada', field: 'quantity', type: PlutoColumnType.number()),
-      PlutoColumn(title: 'Ing. Venta', field: 'sales', type: PlutoColumnType.number()),
-      PlutoColumn(title: 'Ing. Reventa', field: 'salvage', type: PlutoColumnType.number()),
-      PlutoColumn(title: 'Utilidad', field: 'profit', type: PlutoColumnType.number()),
+      PlutoColumn(title: 'Ing. Venta', field: 'sales', type: PlutoColumnType.number(format: '#,###.##')),
+      PlutoColumn(title: 'Ing. Reventa', field: 'salvage', type: PlutoColumnType.number(format: '#,###.##')),
+      PlutoColumn(title: 'Utilidad', field: 'profit', type: PlutoColumnType.number(format: '#,###.##')),
     ];
 
     final List<PlutoRow> rows = results.map((res) {
@@ -204,11 +225,6 @@ class _MonteCarloViewState extends State<MonteCarloView> {
       child: PlutoGrid(
         columns: columns,
         rows: rows,
-        configuration: PlutoGridConfiguration(
-          style: PlutoGridStyleConfig(
-            gridBorderColor: Colors.grey,
-          ),
-        ),
       ),
     );
   }
@@ -242,6 +258,67 @@ class _MonteCarloViewState extends State<MonteCarloView> {
               belowBarData: BarAreaData(show: false),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMultiQSection(MonteCarloProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Análisis de Múltiples Q',
+          style: Theme.of(context).textTheme.headlineSmall,
+          textAlign: TextAlign.center,
+        ),
+        SizedBox(height: 16),
+        TextField(
+          controller: _multiQController,
+          onChanged: provider.setMultiQInput,
+          decoration: InputDecoration(
+            labelText: 'Valores de Q separados por comas (ej: 50, 55, 60)',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: provider.isButtonEnabled && !provider.isMultiQLoading
+              ? () => provider.runMultiQSimulation()
+              : null,
+          child: provider.isMultiQLoading
+              ? CircularProgressIndicator(color: Colors.white)
+              : Text('Comparar Escenarios'),
+        ),
+        SizedBox(height: 16),
+        if (provider.multiQResults.isNotEmpty)
+          _buildMultiQResultsTable(provider.multiQResults),
+      ],
+    );
+  }
+
+  Widget _buildMultiQResultsTable(List<MultiQResult> results) {
+    final List<PlutoColumn> columns = [
+      PlutoColumn(title: 'Cantidad (Q)', field: 'q', type: PlutoColumnType.number()),
+      PlutoColumn(title: 'Utilidad Promedio', field: 'profit', type: PlutoColumnType.number(format: '#,###.##')),
+    ];
+
+    final List<PlutoRow> rows = results.map((res) {
+      return PlutoRow(cells: {
+        'q': PlutoCell(value: res.quantity),
+        'profit': PlutoCell(value: res.averageProfit),
+      });
+    }).toList();
+
+    return SizedBox(
+      height: 200,
+      child: PlutoGrid(
+        columns: columns,
+        rows: rows,
+        configuration: PlutoGridConfiguration(
+          style: PlutoGridStyleConfig(
+            gridBorderColor: Colors.grey,
+          ),
         ),
       ),
     );
