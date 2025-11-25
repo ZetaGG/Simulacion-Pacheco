@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:programas/Pantalla%20de%20inicio.dart';
 import 'package:programas/PruebasEstadisticas.dart';
 import 'package:programas/Tema1.dart';
+import 'package:programas/Tema4/monte_carlo_screen.dart';
 import 'package:programas/cyber_theme.dart';
 
 void main() {
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => PantallaInicio(),
         '/Tema1': (context) => Tema1(),
         '/PruebasEstadisticas': (context) => PruebasEstadisticas(),
+        '/Tema4': (context) => MonteCarloScreen(),
       },
     );
   }

@@ -44,6 +44,12 @@ class PantallaInicio extends StatelessWidget {
                 Navigator.pushNamed(context, '/PruebasEstadisticas');
               },
             ),
+            ListTile(
+              title: Text('Tema 4'),
+              onTap: () {
+                Navigator.pushNamed(context, '/Tema4');
+              },
+            ),
           ],
         ),
       ),
