@@ -17,6 +17,11 @@ class PruebaCorridas {
       table.add({'i': i + 2, 'r_i': sublist[i+1], 'secuencia': seq_val});
     }
 
+    // Assign a sequence value for the first element so the table shows 0/1 for all rows
+    if (table.isNotEmpty) {
+      table[0]['secuencia'] = sequence.isNotEmpty ? sequence[0] : 0;
+    }
+
     int co = 1;
     for (int i = 0; i < sequence.length - 1; i++) {
       if (sequence[i+1] != sequence[i]) {

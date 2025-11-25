@@ -24,7 +24,7 @@ class PruebaChiCuadrada {
       chi0 += pow(ei - obs, 2) / ei;
     }
 
-    double chi_alpha_m_1 = ChiCuadradaTable.lookup(alpha, m - 1);
+    double? chi_alpha_m_1 = ChiCuadradaTable.lookup(alpha, m - 1);
 
     if (chi_alpha_m_1 == null) {
       return {'error': 'No se encontró el valor crítico de Chi-Cuadrada para los grados de libertad dados.'};
